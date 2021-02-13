@@ -17,18 +17,19 @@
 
 package org.apache.commons.jci2.monitor;
 
+import static org.mockito.Mockito.spy;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.jci2.listeners.AbstractFilesystemAlterationListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import junit.framework.TestCase;
 
 /**
  * 
@@ -36,321 +37,322 @@ import org.apache.commons.logging.LogFactory;
  */
 public final class FilesystemAlterationMonitorTestCase extends TestCase {
 
-    private final Log log = LogFactory.getLog(FilesystemAlterationMonitorTestCase.class);
+	public static AbstractFilesystemAlterationListener mockAbstractFilesystemAlterationListener1() {
+		AbstractFilesystemAlterationListener mockInstance = spy(AbstractFilesystemAlterationListener.class);
+		return mockInstance;
+	}
 
-    private FilesystemAlterationMonitor fam;
-    private MyFilesystemAlterationListener listener;
+	private final Log log = LogFactory.getLog(FilesystemAlterationMonitorTestCase.class);
 
-    private File directory;
+	private FilesystemAlterationMonitor fam;
+	private AbstractFilesystemAlterationListener listener;
 
-    
-    @Override
-    protected void setUp() throws Exception {
-        directory = createTempDirectory();
-        assertTrue(directory.exists());
-        assertTrue(directory.isDirectory());
-    }
-    
-    @Override
-    protected void tearDown() throws Exception {
-        FileUtils.deleteDirectory(directory);
-    }
-    
-    
-    protected File createDirectory( final String pName ) throws Exception {
-        final File newDirectory = new File(directory, pName);
-        assertTrue(newDirectory.mkdir());
-        assertTrue(newDirectory.exists());
-        assertTrue(newDirectory.isDirectory());
-        return newDirectory;
-    }
-    
-    protected File writeFile( final String pName, final byte[] pData ) throws Exception {
-        final File file = new File(directory, pName);
-        final File parent = file.getParentFile();
-        if (!parent.mkdirs() && !parent.isDirectory()) {
-            throw new IOException("could not create" + parent);
-        }
-        
-        log.debug("writing file " + pName + " (" + pData.length + " bytes)");
-        
-        final FileOutputStream os = new FileOutputStream(file);
-        os.write(pData);
-        os.close();
-        
-        assertTrue(file.exists());
-        assertTrue(file.isFile());
-        
-        return file;
-    }
+	private File directory;
 
-    protected File writeFile( final String pName, final String pText ) throws Exception {
-        final File file = new File(directory, pName);
-        final File parent = file.getParentFile();
-        if (!parent.mkdirs() && !parent.isDirectory()) {
-            throw new IOException("could not create" + parent);
-        }
-        log.debug("writing " + file);
-        final FileWriter writer = new FileWriter(file);
-        writer.write(pText);
-        writer.close();
-        
-        assertTrue(file.exists());
-        assertTrue(file.isFile());
-        
-        return file;
-    }
+	@Override
+	protected void setUp() throws Exception {
+		directory = createTempDirectory();
+		assertTrue(directory.exists());
+		assertTrue(directory.isDirectory());
+	}
 
-    protected File createTempDirectory() throws IOException {
-        final File tempFile = File.createTempFile("jci2", null);
-        
-        if (!tempFile.delete()) {
-            throw new IOException();
-        }
-        
-        if (!tempFile.mkdir()) {
-            throw new IOException();
-        }
-        
-        return tempFile;         
-    }
+	@Override
+	protected void tearDown() throws Exception {
+		FileUtils.deleteDirectory(directory);
+	}
 
+	protected File createDirectory(final String pName) throws Exception {
+		final File newDirectory = new File(directory, pName);
+		assertTrue(newDirectory.mkdir());
+		assertTrue(newDirectory.exists());
+		assertTrue(newDirectory.isDirectory());
+		return newDirectory;
+	}
 
-    protected void delay() {
-        try {
-            Thread.sleep(1500);
-        } catch (final InterruptedException e) {
-        }
-    }
+	protected File writeFile(final String pName, final byte[] pData) throws Exception {
+		final File file = new File(directory, pName);
+		final File parent = file.getParentFile();
+		if (!parent.mkdirs() && !parent.isDirectory()) {
+			throw new IOException("could not create" + parent);
+		}
 
+		log.debug("writing file " + pName + " (" + pData.length + " bytes)");
 
-    
-    private static class MyFilesystemAlterationListener extends AbstractFilesystemAlterationListener {
-    }
+		final FileOutputStream os = new FileOutputStream(file);
+		os.write(pData);
+		os.close();
 
-    private void start() throws Exception {
-        fam = new FilesystemAlterationMonitor();
-        listener = new MyFilesystemAlterationListener();
-        fam.addListener(directory, listener);
-        fam.start();
-        listener.waitForFirstCheck();
-    }
-    
-    private void stop() {
-        fam.stop();
-    }
-    
-    public void testListenerDoublication() throws Exception {
-        fam = new FilesystemAlterationMonitor();
-        listener = new MyFilesystemAlterationListener();
-        
-        fam.addListener(directory, listener);
-        assertEquals(1, fam.getListenersFor(directory).length);
-        
-        fam.addListener(directory, listener); 
-        assertEquals(1, fam.getListenersFor(directory).length);
-        
-        fam.removeListener(listener);
-        assertEquals(0, fam.getListenersFor(directory).length);
-}
+		assertTrue(file.exists());
+		assertTrue(file.isFile());
 
-    public void testDirectoryDoublication() throws Exception {
-        fam = new FilesystemAlterationMonitor();
+		return file;
+	}
 
-        fam.addListener(directory, new MyFilesystemAlterationListener()); 
-        assertEquals(1, fam.getListenersFor(directory).length);
-        
-        fam.addListener(directory, new MyFilesystemAlterationListener()); 
-        assertEquals(2, fam.getListenersFor(directory).length);
-    }
+	protected File writeFile(final String pName, final String pText) throws Exception {
+		final File file = new File(directory, pName);
+		final File parent = file.getParentFile();
+		if (!parent.mkdirs() && !parent.isDirectory()) {
+			throw new IOException("could not create" + parent);
+		}
+		log.debug("writing " + file);
+		final FileWriter writer = new FileWriter(file);
+		writer.write(pText);
+		writer.close();
 
-    public void testCreateFileDetection() throws Exception {
-        start();
-        
-        writeFile("file", "file");
-        
-        listener.waitForCheck();
-        
-        assertEquals(1, listener.getCreatedFiles().size());
-        
-        stop();
-    }
+		assertTrue(file.exists());
+		assertTrue(file.isFile());
 
-    public void testTimeout() throws Exception {
-    	listener = new MyFilesystemAlterationListener();
-    	
-    	try {
-        	listener.waitForFirstCheck();
-        	fail("should be an timeout");
-        } catch(final Exception e) {
-        	assertEquals("timeout", e.getMessage());
-        }
+		return file;
+	}
 
-        start();
+	protected File createTempDirectory() throws IOException {
+		final File tempFile = File.createTempFile("jci2", null);
 
-        try {
-        	listener.waitForEvent();
-        	fail("should be an timeout");
-        } catch(final Exception e) {
-        	assertEquals("timeout", e.getMessage());
-        }
-        
-        stop();
+		if (!tempFile.delete()) {
+			throw new IOException();
+		}
 
-        try {
-        	listener.waitForCheck();
-        	fail("should be an timeout");
-        } catch(final Exception e) {
-        	assertEquals("timeout", e.getMessage());
-        }
-    
-    }
+		if (!tempFile.mkdir()) {
+			throw new IOException();
+		}
 
-    public void testCreateDirectoryDetection() throws Exception {
-        start();
+		return tempFile;
+	}
 
-        createDirectory("dir");
-        
-        listener.waitForCheck();
-        
-        assertEquals(1, listener.getCreatedDirectories().size());
-        
-        stop();
-    }
+	protected void delay() {
+		try {
+			Thread.sleep(1500);
+		} catch (final InterruptedException e) {
+		}
+	}
 
-    public void testDeleteFileDetection() throws Exception {
-        start();
+	private void start() throws Exception {
+		fam = new FilesystemAlterationMonitor();
+		listener = FilesystemAlterationMonitorTestCase.mockAbstractFilesystemAlterationListener1();
+		fam.addListener(directory, listener);
+		fam.start();
+		listener.waitForFirstCheck();
+	}
 
-        final File file = writeFile("file", "file");
+	private void stop() {
+		fam.stop();
+	}
 
-        assertTrue("file should exist", file.exists());
-        
-        listener.waitForCheck();
-        
-        assertEquals("expecting 1 file created", 1, listener.getCreatedFiles().size());
-        //assertEquals("expecting 0 directories changed", 0, listener.getChangedDirectories().size()); // todo investigate why this is failing on Windows
-        
-        file.delete();
-        assertFalse("file should not exist", file.exists());
+	public void testListenerDoublication() throws Exception {
+		fam = new FilesystemAlterationMonitor();
+		listener = FilesystemAlterationMonitorTestCase.mockAbstractFilesystemAlterationListener1();
 
-        listener.waitForCheck();
-        
-        assertEquals("expecting 1 file deleted", 1, listener.getDeletedFiles().size());
-        
-        stop();        
-    }
-    public void testDeleteDirectoryDetection() throws Exception {
-        start();
+		fam.addListener(directory, listener);
+		assertEquals(1, fam.getListenersFor(directory).length);
 
-        final File dir = createDirectory("dir");
-        createDirectory("dir/sub");
-        final File file = writeFile("dir/sub/file", "file");
+		fam.addListener(directory, listener);
+		assertEquals(1, fam.getListenersFor(directory).length);
 
-        listener.waitForCheck();
-        
-        assertEquals(2, listener.getCreatedDirectories().size());
-        assertEquals(1, listener.getCreatedFiles().size());
+		fam.removeListener(listener);
+		assertEquals(0, fam.getListenersFor(directory).length);
+	}
 
-        delay();
-        
-        FileUtils.deleteDirectory(dir);
-        assertTrue(!dir.exists());
-        assertTrue(!file.exists());
+	public void testDirectoryDoublication() throws Exception {
+		fam = new FilesystemAlterationMonitor();
 
-        listener.waitForCheck();
-        
-        assertEquals(2, listener.getDeletedDirectories().size());
-        assertEquals(1, listener.getDeletedFiles().size());
+		fam.addListener(directory, FilesystemAlterationMonitorTestCase.mockAbstractFilesystemAlterationListener1());
+		assertEquals(1, fam.getListenersFor(directory).length);
 
-        stop();
-    }
+		fam.addListener(directory, FilesystemAlterationMonitorTestCase.mockAbstractFilesystemAlterationListener1());
+		assertEquals(2, fam.getListenersFor(directory).length);
+	}
 
-    public void testModifyFileDetection() throws Exception {
-        start();
+	public void testCreateFileDetection() throws Exception {
+		start();
 
-        writeFile("file", "file");
-        
-        listener.waitForCheck();
-        
-        assertEquals(1, listener.getCreatedFiles().size());
+		writeFile("file", "file");
 
-        delay();
+		listener.waitForCheck();
 
-        writeFile("file", "changed file");
+		assertEquals(1, listener.getCreatedFiles().size());
 
-        listener.waitForCheck();
-        
-        assertEquals(1, listener.getChangedFiles().size());
-        
-        stop();
-    }
+		stop();
+	}
 
-    public void testCreatingLocalDirectoryChangesLastModified() throws Exception {
-        final long modified = directory.lastModified();
+	public void testTimeout() throws Exception {
+		listener = FilesystemAlterationMonitorTestCase.mockAbstractFilesystemAlterationListener1();
 
-        delay();
-        
-        createDirectory("directory");
+		try {
+			listener.waitForFirstCheck();
+			fail("should be an timeout");
+		} catch (final Exception e) {
+			assertEquals("timeout", e.getMessage());
+		}
 
-        delay();
-               
-        assertTrue(directory.lastModified() != modified);
-    }
+		start();
 
-    public void testCreatingLocalFileChangesLastModified() throws Exception {
-        final long modified = directory.lastModified();
+		try {
+			listener.waitForEvent();
+			fail("should be an timeout");
+		} catch (final Exception e) {
+			assertEquals("timeout", e.getMessage());
+		}
 
-        delay();
-        
-        writeFile("file", "file");
+		stop();
 
-        delay();
+		try {
+			listener.waitForCheck();
+			fail("should be an timeout");
+		} catch (final Exception e) {
+			assertEquals("timeout", e.getMessage());
+		}
 
-        assertTrue(directory.lastModified() != modified);
-    }
+	}
 
-    public void testCreatingSubDirectoryChangesLastModified() throws Exception {
-        createDirectory("dir");
+	public void testCreateDirectoryDetection() throws Exception {
+		start();
 
-        final long modified = directory.lastModified();
+		createDirectory("dir");
 
-        delay();
+		listener.waitForCheck();
 
-        createDirectory("dir/sub");
+		assertEquals(1, listener.getCreatedDirectories().size());
 
-        assertTrue(directory.lastModified() == modified);
-    }
+		stop();
+	}
 
-    public void testCreatingFileInSubDirectoryChangesLastModified() throws Exception {
-        createDirectory("dir");
+	public void testDeleteFileDetection() throws Exception {
+		start();
 
-        final long modified = directory.lastModified();
+		final File file = writeFile("file", "file");
 
-        delay();
-                
-        writeFile("dir/file", "file");
+		assertTrue("file should exist", file.exists());
 
-        assertTrue(directory.lastModified() == modified);
-    }
-    
-    public void testInterval() throws Exception {
+		listener.waitForCheck();
 
-        final long interval = 1000;
+		assertEquals("expecting 1 file created", 1, listener.getCreatedFiles().size());
+		// assertEquals("expecting 0 directories changed", 0,
+		// listener.getChangedDirectories().size()); // todo investigate why this is
+		// failing on Windows
 
-        start();
-        fam.setInterval(interval);
+		file.delete();
+		assertFalse("file should not exist", file.exists());
 
-        listener.waitForCheck();
-        final long t1 = System.currentTimeMillis();
+		listener.waitForCheck();
 
-        listener.waitForCheck();
-        final long t2 = System.currentTimeMillis();
-        
-        final long diff = t2-t1;
-        
-        // interval should be at around the same interval
-        assertTrue("the interval was set to " + interval + " but the time difference was " + diff, (diff > (interval-50)) && (diff < (interval+50)));
-        
-        stop();
-    }    
+		assertEquals("expecting 1 file deleted", 1, listener.getDeletedFiles().size());
+
+		stop();
+	}
+
+	public void testDeleteDirectoryDetection() throws Exception {
+		start();
+
+		final File dir = createDirectory("dir");
+		createDirectory("dir/sub");
+		final File file = writeFile("dir/sub/file", "file");
+
+		listener.waitForCheck();
+
+		assertEquals(2, listener.getCreatedDirectories().size());
+		assertEquals(1, listener.getCreatedFiles().size());
+
+		delay();
+
+		FileUtils.deleteDirectory(dir);
+		assertTrue(!dir.exists());
+		assertTrue(!file.exists());
+
+		listener.waitForCheck();
+
+		assertEquals(2, listener.getDeletedDirectories().size());
+		assertEquals(1, listener.getDeletedFiles().size());
+
+		stop();
+	}
+
+	public void testModifyFileDetection() throws Exception {
+		start();
+
+		writeFile("file", "file");
+
+		listener.waitForCheck();
+
+		assertEquals(1, listener.getCreatedFiles().size());
+
+		delay();
+
+		writeFile("file", "changed file");
+
+		listener.waitForCheck();
+
+		assertEquals(1, listener.getChangedFiles().size());
+
+		stop();
+	}
+
+	public void testCreatingLocalDirectoryChangesLastModified() throws Exception {
+		final long modified = directory.lastModified();
+
+		delay();
+
+		createDirectory("directory");
+
+		delay();
+
+		assertTrue(directory.lastModified() != modified);
+	}
+
+	public void testCreatingLocalFileChangesLastModified() throws Exception {
+		final long modified = directory.lastModified();
+
+		delay();
+
+		writeFile("file", "file");
+
+		delay();
+
+		assertTrue(directory.lastModified() != modified);
+	}
+
+	public void testCreatingSubDirectoryChangesLastModified() throws Exception {
+		createDirectory("dir");
+
+		final long modified = directory.lastModified();
+
+		delay();
+
+		createDirectory("dir/sub");
+
+		assertTrue(directory.lastModified() == modified);
+	}
+
+	public void testCreatingFileInSubDirectoryChangesLastModified() throws Exception {
+		createDirectory("dir");
+
+		final long modified = directory.lastModified();
+
+		delay();
+
+		writeFile("dir/file", "file");
+
+		assertTrue(directory.lastModified() == modified);
+	}
+
+	public void testInterval() throws Exception {
+
+		final long interval = 1000;
+
+		start();
+		fam.setInterval(interval);
+
+		listener.waitForCheck();
+		final long t1 = System.currentTimeMillis();
+
+		listener.waitForCheck();
+		final long t2 = System.currentTimeMillis();
+
+		final long diff = t2 - t1;
+
+		// interval should be at around the same interval
+		assertTrue("the interval was set to " + interval + " but the time difference was " + diff,
+				(diff > (interval - 50)) && (diff < (interval + 50)));
+
+		stop();
+	}
 }

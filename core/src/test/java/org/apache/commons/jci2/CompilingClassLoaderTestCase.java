@@ -41,201 +41,205 @@ import org.apache.commons.logging.LogFactory;
  */
 public final class CompilingClassLoaderTestCase extends AbstractTestCase {
 
-    private final Log log = LogFactory.getLog(CompilingClassLoaderTestCase.class);
+	private final Log log = LogFactory.getLog(CompilingClassLoaderTestCase.class);
 
-    private ReloadingClassLoader classloader;
-    private CompilingListener listener;
-    private FilesystemAlterationMonitor fam;
-        
-    private final static class MockJavaCompiler implements JavaCompiler {
+	private ReloadingClassLoader classloader;
+	private CompilingListener listener;
+	private FilesystemAlterationMonitor fam;
 
-        private final Log log = LogFactory.getLog(MockJavaCompiler.class);
+	private final static class MockJavaCompiler implements JavaCompiler {
 
-        public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader, final ResourceStore pStore, final ClassLoader pClassLoader, final JavaCompilerSettings pSettings ) {
+		private final Log log = LogFactory.getLog(MockJavaCompiler.class);
 
-            for (final String resourcePath : pResourcePaths) {
-                final byte[] resourceContent = pReader.getBytes(resourcePath);
+		public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader,
+				final ResourceStore pStore, final ClassLoader pClassLoader, final JavaCompilerSettings pSettings) {
 
-                log.debug("resource " + resourcePath + " = " + ((resourceContent!=null)?new String(resourceContent):null) );
+			for (final String resourcePath : pResourcePaths) {
+				final byte[] resourceContent = pReader.getBytes(resourcePath);
 
-                final byte[] data;
+				log.debug("resource " + resourcePath + " = "
+						+ ((resourceContent != null) ? new String(resourceContent) : null));
 
-                if ("jci2/Simple.java".equals(resourcePath)) {
+				final byte[] data;
 
-                    try {
-                        data = SimpleDump.dump(new String(resourceContent));
-                    } catch (final Exception e) {
-                        throw new RuntimeException("cannot handle resource " + resourcePath, e);
-                    }
+				if ("jci2/Simple.java".equals(resourcePath)) {
 
-                } else if ("jci2/Extended.java".equals(resourcePath)) {
+					try {
+						data = SimpleDump.dump(new String(resourceContent));
+					} catch (final Exception e) {
+						throw new RuntimeException("cannot handle resource " + resourcePath, e);
+					}
 
-                    try {
-                        data = ExtendedDump.dump();
-                    } catch (final Exception e) {
-                        throw new RuntimeException("cannot handle resource " + resourcePath, e);
-                    }
+				} else if ("jci2/Extended.java".equals(resourcePath)) {
 
-                } else {
-                    throw new RuntimeException("cannot handle resource " + resourcePath);
-                }
+					try {
+						data = ExtendedDump.dump();
+					} catch (final Exception e) {
+						throw new RuntimeException("cannot handle resource " + resourcePath, e);
+					}
 
-                log.debug("compiling " + resourcePath + " (" + data.length + ")");
+				} else {
+					throw new RuntimeException("cannot handle resource " + resourcePath);
+				}
 
-                pStore.write(ConversionUtils.stripExtension(resourcePath) + ".class", data);
+				log.debug("compiling " + resourcePath + " (" + data.length + ")");
 
-            }
+				pStore.write(ConversionUtils.stripExtension(resourcePath) + ".class", data);
 
-            return new CompilationResult(new CompilationProblem[0]);
-        }
+			}
 
-        public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader, final ResourceStore pStore, final ClassLoader pClassLoader) {
-            return compile(pResourcePaths, pReader, pStore, pClassLoader, null);
-        }
+			return new CompilationResult(new CompilationProblem[0]);
+		}
 
-        public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader, final ResourceStore pStore) {
-            return compile(pResourcePaths, pReader, pStore, null);
-        }
+		public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader,
+				final ResourceStore pStore, final ClassLoader pClassLoader) {
+			return compile(pResourcePaths, pReader, pStore, pClassLoader, null);
+		}
 
-        public void setCompilationProblemHandler(final CompilationProblemHandler pHandler) {
-        }
+		public CompilationResult compile(final String[] pResourcePaths, final ResourceReader pReader,
+				final ResourceStore pStore) {
+			return compile(pResourcePaths, pReader, pStore, null);
+		}
 
-        public JavaCompilerSettings createDefaultSettings() {
-            return null;
-        }
+		public void setCompilationProblemHandler(final CompilationProblemHandler pHandler) {
+		}
 
-    }
-    
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        
-        classloader = new ReloadingClassLoader(this.getClass().getClassLoader());
-        listener = new CompilingListener(new MockJavaCompiler());   
+		public JavaCompilerSettings createDefaultSettings() {
+			return null;
+		}
 
-        listener.addReloadNotificationListener(classloader);
-        
-        fam = new FilesystemAlterationMonitor();
-        fam.addListener(directory, listener);
-        fam.start();
-    }
+	}
 
-    private void initialCompile() throws Exception {
-        log.debug("initial compile");        
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
 
-        listener.waitForFirstCheck();
-                
-        writeFile("jci2/Simple.java", "Simple1");
-        writeFile("jci2/Extended.java", "Extended");
-        
-        log.debug("waiting for compile changes to get applied");        
-        listener.waitForCheck();
-        
-        log.debug("*** ready to test");        
-    }
-    
-    public void testCreate() throws Exception {
-        initialCompile();
-        
-        log.debug("loading Simple");        
-        final Object simple = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple1", simple.toString());
-        
-        log.debug("loading Extended");        
-        final Object extended = classloader.loadClass("jci2.Extended").newInstance();
-        assertEquals("Extended:Simple1", extended.toString());
-    }
+		classloader = new ReloadingClassLoader(this.getClass().getClassLoader());
+		listener = new CompilingListener(new MockJavaCompiler());
 
-    public void testChange() throws Exception {        
-        initialCompile();
+		listener.addReloadNotificationListener(classloader);
 
-        final Object simple = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple1", simple.toString());
-        
-        final Object extended = classloader.loadClass("jci2.Extended").newInstance();
-        assertEquals("Extended:Simple1", extended.toString());
+		fam = new FilesystemAlterationMonitor();
+		fam.addListener(directory, listener);
+		fam.start();
+	}
 
-        delay();
-        writeFile("jci2/Simple.java", "Simple2");
-        listener.waitForCheck();
-    
-        final Object simple2 = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple2", simple2.toString());
-        
-        final Object newExtended = classloader.loadClass("jci2.Extended").newInstance();
-        assertEquals("Extended:Simple2", newExtended.toString());
-    }
+	private void initialCompile() throws Exception {
+		log.debug("initial compile");
 
-    public void testDelete() throws Exception {
-        initialCompile();
+		listener.waitForFirstCheck();
 
-        final Object simple = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple1", simple.toString());
-        
-        final Object extended = classloader.loadClass("jci2.Extended").newInstance();
-        assertEquals("Extended:Simple1", extended.toString());
-                
-        listener.waitForCheck();
-        
-        log.debug("deleting source file");
-        assertTrue(new File(directory, "jci2/Extended.java").delete());
-        
-        listener.waitForCheck();
-       
-        log.debug("loading Simple");
-        final Object oldSimple = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple1", oldSimple.toString());
+		writeFile("jci2/Simple.java", "Simple1");
+		writeFile("jci2/Extended.java", "Extended");
 
-        log.debug("trying to loading Extended");
-        try {
-            classloader.loadClass("jci2.Extended").newInstance();
-            fail();
-        } catch(final ClassNotFoundException e) {
-            assertEquals("jci2.Extended", e.getMessage());
-        }        
-        
-        log.debug("deleting whole directory");
-        FileUtils.deleteDirectory(new File(directory, "jci2"));
+		log.debug("waiting for compile changes to get applied");
+		listener.waitForCheck();
 
-        listener.waitForCheck();
+		log.debug("*** ready to test");
+	}
 
-        log.debug("trying to loading Simple");
-        try {
-            classloader.loadClass("jci2.Simple").newInstance();
-            fail();
-        } catch(final ClassNotFoundException e) {
-            assertEquals("jci2.Simple", e.getMessage());
-        }
+	public void testCreate() throws Exception {
+		initialCompile();
 
-    }
+		log.debug("loading Simple");
+		final Object simple = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple1", simple.toString());
 
-    public void testDeleteDependency() throws Exception {        
-        initialCompile();
+		log.debug("loading Extended");
+		final Object extended = classloader.loadClass("jci2.Extended").newInstance();
+		assertEquals("Extended:Simple1", extended.toString());
+	}
 
-        final Object simple = classloader.loadClass("jci2.Simple").newInstance();
-        assertEquals("Simple1", simple.toString());
-        
-        final Object extended = classloader.loadClass("jci2.Extended").newInstance();
-        assertEquals("Extended:Simple1", extended.toString());
-        
-        log.debug("deleting source file");
-        assertTrue(new File(directory, "jci2/Simple.java").delete());
-        listener.waitForCheck();
+	public void testChange() throws Exception {
+		initialCompile();
 
-        log.debug("trying to load dependend class");
-        try {
-            classloader.loadClass("jci2.Extended").newInstance();
-            fail();
-        } catch(final NoClassDefFoundError e) {
-            assertEquals("jci2/Simple", e.getMessage());
-        }
-        
-    }
+		final Object simple = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple1", simple.toString());
 
-    @Override
-    protected void tearDown() throws Exception {
-        fam.removeListener(listener);
-        fam.stop();
-        super.tearDown();
-    }    
+		final Object extended = classloader.loadClass("jci2.Extended").newInstance();
+		assertEquals("Extended:Simple1", extended.toString());
+
+		delay();
+		writeFile("jci2/Simple.java", "Simple2");
+		listener.waitForCheck();
+
+		final Object simple2 = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple2", simple2.toString());
+
+		final Object newExtended = classloader.loadClass("jci2.Extended").newInstance();
+		assertEquals("Extended:Simple2", newExtended.toString());
+	}
+
+	public void testDelete() throws Exception {
+		initialCompile();
+
+		final Object simple = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple1", simple.toString());
+
+		final Object extended = classloader.loadClass("jci2.Extended").newInstance();
+		assertEquals("Extended:Simple1", extended.toString());
+
+		listener.waitForCheck();
+
+		log.debug("deleting source file");
+		assertTrue(new File(directory, "jci2/Extended.java").delete());
+
+		listener.waitForCheck();
+
+		log.debug("loading Simple");
+		final Object oldSimple = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple1", oldSimple.toString());
+
+		log.debug("trying to loading Extended");
+		try {
+			classloader.loadClass("jci2.Extended").newInstance();
+			fail();
+		} catch (final ClassNotFoundException e) {
+			assertEquals("jci2.Extended", e.getMessage());
+		}
+
+		log.debug("deleting whole directory");
+		FileUtils.deleteDirectory(new File(directory, "jci2"));
+
+		listener.waitForCheck();
+
+		log.debug("trying to loading Simple");
+		try {
+			classloader.loadClass("jci2.Simple").newInstance();
+			fail();
+		} catch (final ClassNotFoundException e) {
+			assertEquals("jci2.Simple", e.getMessage());
+		}
+
+	}
+
+	public void testDeleteDependency() throws Exception {
+		initialCompile();
+
+		final Object simple = classloader.loadClass("jci2.Simple").newInstance();
+		assertEquals("Simple1", simple.toString());
+
+		final Object extended = classloader.loadClass("jci2.Extended").newInstance();
+		assertEquals("Extended:Simple1", extended.toString());
+
+		log.debug("deleting source file");
+		assertTrue(new File(directory, "jci2/Simple.java").delete());
+		listener.waitForCheck();
+
+		log.debug("trying to load dependend class");
+		try {
+			classloader.loadClass("jci2.Extended").newInstance();
+			fail();
+		} catch (final NoClassDefFoundError e) {
+			assertEquals("jci2/Simple", e.getMessage());
+		}
+
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		fam.removeListener(listener);
+		fam.stop();
+		super.tearDown();
+	}
 }
