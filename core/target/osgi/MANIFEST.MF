@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1615946328182
+Build-Jdk: 12.0.2
+Built-By: wx199
+Bundle-Description: Apache Commons JCI core interfaces and implementatio
+ ns.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/commons-jci2
+ -core/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI core
+Bundle-SymbolicName: org.apache.commons.jci-core
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci2;version="2.0.0.SNAPSHOT",org.apa
+ che.commons.jci2.compilers;version="2.0.0.SNAPSHOT",org.apache.commons.
+ jci2.listeners;version="2.0.0.SNAPSHOT",org.apache.commons.jci2.problem
+ s;version="2.0.0.SNAPSHOT",org.apache.commons.jci2.readers;version="2.0
+ .0.SNAPSHOT",org.apache.commons.jci2.stores;version="2.0.0.SNAPSHOT",or
+ g.apache.commons.jci2.utils;version="2.0.0.SNAPSHOT"
+Import-Package: org.apache.commons.io,org.apache.commons.jci2.monitor,or
+ g.apache.commons.logging
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

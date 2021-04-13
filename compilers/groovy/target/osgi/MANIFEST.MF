@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1615946328692
+Build-Jdk: 12.0.2
+Built-By: wx199
+Bundle-Description: Apache Commons JCI compiler implementation for the G
+ roovy compiler.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/compilers/co
+ mmons-jci2-groovy/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI compiler-groovy
+Bundle-SymbolicName: org.apache.commons.jci-groovy
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci2.compilers;version="2.0.0.SNAPSHO
+ T"
+Import-Package: groovy.lang,org.apache.commons.jci2.problems,org.apache.
+ commons.jci2.readers,org.apache.commons.jci2.stores,org.apache.commons.
+ jci2.utils,org.apache.commons.logging,org.codehaus.groovy.control,org.c
+ odehaus.groovy.control.messages,org.codehaus.groovy.syntax,org.codehaus
+ .groovy.tools
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1615946328377
+Build-Jdk: 12.0.2
+Built-By: wx199
+Bundle-Description: Apache Commons JCI compiler implementation for the E
+ clipse compiler.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/compilers/co
+ mmons-jci2-eclipse/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI compiler-eclipse
+Bundle-SymbolicName: org.apache.commons.jci-eclipse
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci2.compilers;version="2.0.0.SNAPSHO
+ T"
+Import-Package: org.apache.commons.jci2.problems,org.apache.commons.jci2
+ .readers,org.apache.commons.jci2.stores,org.apache.commons.jci2.utils,o
+ rg.apache.commons.logging,org.eclipse.jdt.core.compiler,org.eclipse.jdt
+ .internal.compiler,org.eclipse.jdt.internal.compiler.classfmt,org.eclip
+ se.jdt.internal.compiler.env,org.eclipse.jdt.internal.compiler.impl,org
+ .eclipse.jdt.internal.compiler.problem
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213
