@@ -30,6 +30,13 @@
         Commons JCI FileAlterationMonitor (FAM) to monitor local filesystems and get notified about changes.
     </description>
     <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>3.9.0</version>
+    <scope>test</scope>
+</dependency>
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
